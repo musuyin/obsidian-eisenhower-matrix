@@ -19,7 +19,7 @@ export class TaskStore {
 			const parsed: unknown = JSON.parse(await this.vault.read(file));
 			if (this.isStoreData(parsed)) return parsed;
 		} catch (error) {
-			console.error('Task Quadrant: unable to read task data.', error);
+			console.error('Obsidian Eisenhower Matrix: unable to read task data.', error);
 		}
 		return structuredClone(EMPTY_STORE);
 	}

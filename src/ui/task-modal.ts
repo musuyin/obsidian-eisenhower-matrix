@@ -23,7 +23,7 @@ export class TaskModal extends Modal {
 	}
 
 	onOpen(): void {
-		this.contentEl.addClass('task-quadrant-modal');
+		this.contentEl.addClass('obsidian-eisenhower-matrix-modal');
 		this.contentEl.createEl('h2', { text: this.draft.title ? '编辑任务' : '新增任务' });
 		new Setting(this.contentEl).setName('任务名称').addText((text) => {
 			text.setValue(this.draft.title).setPlaceholder('要完成什么？').onChange((value) => { this.draft.title = value; });
@@ -41,7 +41,7 @@ export class TaskModal extends Modal {
 		const drawLinks = () => {
 			linksEl.empty();
 			this.draft.links.forEach((link, index) => {
-				const row = linksEl.createDiv({ cls: 'task-quadrant-modal-row' });
+				const row = linksEl.createDiv({ cls: 'obsidian-eisenhower-matrix-modal-row' });
 				const input = row.createEl('input', { type: 'text', value: link.path, placeholder: '笔记路径或 [[内部链接]]' });
 				input.addEventListener('change', () => (link.path = input.value.trim()));
 				const remove = row.createEl('button', { text: '移除', cls: 'mod-warning' });
@@ -49,7 +49,7 @@ export class TaskModal extends Modal {
 			});
 		};
 		drawLinks();
-		const addLink = this.contentEl.createEl('button', { text: '添加关联笔记', cls: 'task-quadrant-secondary-button' });
+		const addLink = this.contentEl.createEl('button', { text: '添加关联笔记', cls: 'obsidian-eisenhower-matrix-secondary-button' });
 		addLink.addEventListener('click', () => { this.draft.links.push({ path: '' }); drawLinks(); });
 
 		this.contentEl.createEl('h3', { text: '子任务' });
@@ -57,7 +57,7 @@ export class TaskModal extends Modal {
 		const drawSubtasks = () => {
 			subtasksEl.empty();
 			this.draft.subtasks.forEach((subtask, index) => {
-				const row = subtasksEl.createDiv({ cls: 'task-quadrant-modal-row' });
+				const row = subtasksEl.createDiv({ cls: 'obsidian-eisenhower-matrix-modal-row' });
 				const input = row.createEl('input', { type: 'text', value: subtask.title, placeholder: '子任务' });
 				input.addEventListener('change', () => (subtask.title = input.value.trim()));
 				const remove = row.createEl('button', { text: '移除', cls: 'mod-warning' });
@@ -65,7 +65,7 @@ export class TaskModal extends Modal {
 			});
 		};
 		drawSubtasks();
-		const addSubtask = this.contentEl.createEl('button', { text: '添加子任务', cls: 'task-quadrant-secondary-button' });
+		const addSubtask = this.contentEl.createEl('button', { text: '添加子任务', cls: 'obsidian-eisenhower-matrix-secondary-button' });
 		addSubtask.addEventListener('click', () => { this.draft.subtasks.push({ id: crypto.randomUUID(), title: '', completed: false, order: this.draft.subtasks.length }); drawSubtasks(); });
 
 		const actions = this.contentEl.createDiv({ cls: 'modal-button-container' });

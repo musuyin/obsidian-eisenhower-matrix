@@ -1,18 +1,18 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
-import TaskQuadrantPlugin from './main';
+import ObsidianEisenhowerMatrixPlugin from './main';
 
-export interface TaskQuadrantSettings {
+export interface ObsidianEisenhowerMatrixSettings {
 	dataFilePath: string;
 	showCompletedTasks: boolean;
 }
 
-export const DEFAULT_SETTINGS: TaskQuadrantSettings = {
-	dataFilePath: 'TODO/task-quadrant.json',
+export const DEFAULT_SETTINGS: ObsidianEisenhowerMatrixSettings = {
+	dataFilePath: 'TODO/obsidian-eisenhower-matrix.json',
 	showCompletedTasks: false,
 };
 
-export class TaskQuadrantSettingTab extends PluginSettingTab {
-	constructor(app: App, private readonly plugin: TaskQuadrantPlugin) {
+export class ObsidianEisenhowerMatrixSettingTab extends PluginSettingTab {
+	constructor(app: App, private readonly plugin: ObsidianEisenhowerMatrixPlugin) {
 		super(app, plugin);
 	}
 
@@ -24,7 +24,7 @@ export class TaskQuadrantSettingTab extends PluginSettingTab {
 			.setDesc('相对于 Vault 根目录的 JSON 文件路径。修改后，新任务会保存到新位置。')
 			.addText((text) =>
 				text
-					.setPlaceholder('TODO/task-quadrant.json')
+					.setPlaceholder('TODO/obsidian-eisenhower-matrix.json')
 					.setValue(this.plugin.settings.dataFilePath)
 					.onChange(async (value) => {
 						this.plugin.settings.dataFilePath = value.trim() || DEFAULT_SETTINGS.dataFilePath;

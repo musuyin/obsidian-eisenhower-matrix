@@ -1,32 +1,32 @@
-.task-quadrant-view { padding: 1.5rem; height: 100%; overflow: auto; }
-.task-quadrant-header { display: flex; justify-content: space-between; gap: 1rem; align-items: center; margin-bottom: 1.5rem; }
-.task-quadrant-header h1 { margin: 0; font-size: 1.65rem; }
-.task-quadrant-header p { margin: .3rem 0 0; color: var(--text-muted); }
-.task-quadrant-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
-.task-quadrant-axes { position: relative; min-height: 2.5rem; color: var(--text-muted); font-size: .85rem; text-align: center; }
-.task-quadrant-importance-label { position: absolute; left: 0; top: .1rem; writing-mode: vertical-rl; transform: rotate(180deg); }
-.task-quadrant-urgency-label { padding-top: .4rem; letter-spacing: .04em; }
-.task-quadrant-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 1px solid var(--background-modifier-border); border-radius: 12px; overflow: hidden; }
-.task-quadrant-panel { min-height: 245px; padding: 1rem; background: var(--background-primary); border-color: var(--background-modifier-border); }
-.task-quadrant-panel:nth-child(odd) { border-right: 1px solid var(--background-modifier-border); }
-.task-quadrant-panel:nth-child(-n+2) { border-bottom: 1px solid var(--background-modifier-border); }
-.task-quadrant-panel-heading, .task-quadrant-task-top { display: flex; align-items: center; gap: .45rem; }
-.task-quadrant-panel-heading { justify-content: space-between; margin-bottom: .75rem; }
-.task-quadrant-panel-heading h2 { margin: 0; font-size: 1rem; }
-.task-quadrant-panel-heading button, .task-quadrant-task-top > button:last-child { background: transparent; border: 0; box-shadow: none; color: var(--text-muted); padding: .25rem; cursor: pointer; }
-.task-quadrant-task-list { display: grid; gap: .6rem; }
-.task-quadrant-task { border: 1px solid var(--background-modifier-border); border-radius: 8px; padding: .7rem; background: var(--background-secondary); }
-.task-quadrant-task.is-completed { opacity: .62; }
-.task-quadrant-task.is-completed .task-quadrant-task-title { text-decoration: line-through; }
-.task-quadrant-task-top input { flex: 0 0 auto; margin: 0; }
-.task-quadrant-task-title { flex: 1; padding: 0; border: 0; box-shadow: none; background: transparent; color: var(--text-normal); text-align: left; cursor: pointer; font-weight: 600; }
-.task-quadrant-description { font-size: .88rem; color: var(--text-muted); margin: .5rem 0 0 1.55rem; white-space: pre-wrap; }
-.task-quadrant-subtask-count { margin: .5rem 0 0 1.55rem; font-size: .78rem; color: var(--text-muted); }
-.task-quadrant-links { display: flex; gap: .4rem; flex-wrap: wrap; margin: .55rem 0 0 1.55rem; }
-.task-quadrant-links button { font-size: .78rem; color: var(--link-color); background: transparent; border: 0; box-shadow: none; padding: 0; cursor: pointer; }
-.task-quadrant-empty { color: var(--text-faint); text-align: center; padding: 2rem 0; font-size: .88rem; }
-.task-quadrant-modal .setting-item { border-top: 0; }
-.task-quadrant-modal-row { display: flex; gap: .5rem; margin: .4rem 0; }
-.task-quadrant-modal-row input { flex: 1; }
-.task-quadrant-secondary-button { margin-bottom: .75rem; }
-@media (max-width: 700px) { .task-quadrant-view { padding: 1rem; } .task-quadrant-header { align-items: flex-start; flex-direction: column; } .task-quadrant-grid { grid-template-columns: 1fr; border-radius: 8px; } .task-quadrant-panel { min-height: auto; border-right: 0 !important; border-bottom: 1px solid var(--background-modifier-border) !important; } .task-quadrant-panel:last-child { border-bottom: 0 !important; } .task-quadrant-importance-label { display: none; } .task-quadrant-urgency-label { text-align: left; } }
+.obsidian-eisenhower-matrix-view { padding: 1.5rem; height: 100%; overflow: auto; }
+.obsidian-eisenhower-matrix-header { display: flex; justify-content: space-between; gap: 1rem; align-items: center; margin-bottom: 1.5rem; }
+.obsidian-eisenhower-matrix-header h1 { margin: 0; font-size: 1.65rem; }
+.obsidian-eisenhower-matrix-header p { margin: .3rem 0 0; color: var(--text-muted); }
+.obsidian-eisenhower-matrix-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+.obsidian-eisenhower-matrix-axes { position: relative; min-height: 2.5rem; color: var(--text-muted); font-size: .85rem; text-align: center; }
+.obsidian-eisenhower-matrix-importance-label { position: absolute; left: 0; top: .1rem; writing-mode: vertical-rl; transform: rotate(180deg); }
+.obsidian-eisenhower-matrix-urgency-label { padding-top: .4rem; letter-spacing: .04em; }
+.obsidian-eisenhower-matrix-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 1px solid var(--background-modifier-border); border-radius: 12px; overflow: hidden; }
+.obsidian-eisenhower-matrix-panel { min-height: 245px; padding: 1rem; background: var(--background-primary); border-color: var(--background-modifier-border); }
+.obsidian-eisenhower-matrix-panel:nth-child(odd) { border-right: 1px solid var(--background-modifier-border); }
+.obsidian-eisenhower-matrix-panel:nth-child(-n+2) { border-bottom: 1px solid var(--background-modifier-border); }
+.obsidian-eisenhower-matrix-panel-heading, .obsidian-eisenhower-matrix-task-top { display: flex; align-items: center; gap: .45rem; }
+.obsidian-eisenhower-matrix-panel-heading { justify-content: space-between; margin-bottom: .75rem; }
+.obsidian-eisenhower-matrix-panel-heading h2 { margin: 0; font-size: 1rem; }
+.obsidian-eisenhower-matrix-panel-heading button, .obsidian-eisenhower-matrix-task-top > button:last-child { background: transparent; border: 0; box-shadow: none; color: var(--text-muted); padding: .25rem; cursor: pointer; }
+.obsidian-eisenhower-matrix-task-list { display: grid; gap: .6rem; }
+.obsidian-eisenhower-matrix-task { border: 1px solid var(--background-modifier-border); border-radius: 8px; padding: .7rem; background: var(--background-secondary); }
+.obsidian-eisenhower-matrix-task.is-completed { opacity: .62; }
+.obsidian-eisenhower-matrix-task.is-completed .obsidian-eisenhower-matrix-task-title { text-decoration: line-through; }
+.obsidian-eisenhower-matrix-task-top input { flex: 0 0 auto; margin: 0; }
+.obsidian-eisenhower-matrix-task-title { flex: 1; padding: 0; border: 0; box-shadow: none; background: transparent; color: var(--text-normal); text-align: left; cursor: pointer; font-weight: 600; }
+.obsidian-eisenhower-matrix-description { font-size: .88rem; color: var(--text-muted); margin: .5rem 0 0 1.55rem; white-space: pre-wrap; }
+.obsidian-eisenhower-matrix-subtask-count { margin: .5rem 0 0 1.55rem; font-size: .78rem; color: var(--text-muted); }
+.obsidian-eisenhower-matrix-links { display: flex; gap: .4rem; flex-wrap: wrap; margin: .55rem 0 0 1.55rem; }
+.obsidian-eisenhower-matrix-links button { font-size: .78rem; color: var(--link-color); background: transparent; border: 0; box-shadow: none; padding: 0; cursor: pointer; }
+.obsidian-eisenhower-matrix-empty { color: var(--text-faint); text-align: center; padding: 2rem 0; font-size: .88rem; }
+.obsidian-eisenhower-matrix-modal .setting-item { border-top: 0; }
+.obsidian-eisenhower-matrix-modal-row { display: flex; gap: .5rem; margin: .4rem 0; }
+.obsidian-eisenhower-matrix-modal-row input { flex: 1; }
+.obsidian-eisenhower-matrix-secondary-button { margin-bottom: .75rem; }
+@media (max-width: 700px) { .obsidian-eisenhower-matrix-view { padding: 1rem; } .obsidian-eisenhower-matrix-header { align-items: flex-start; flex-direction: column; } .obsidian-eisenhower-matrix-grid { grid-template-columns: 1fr; border-radius: 8px; } .obsidian-eisenhower-matrix-panel { min-height: auto; border-right: 0 !important; border-bottom: 1px solid var(--background-modifier-border) !important; } .obsidian-eisenhower-matrix-panel:last-child { border-bottom: 0 !important; } .obsidian-eisenhower-matrix-importance-label { display: none; } .obsidian-eisenhower-matrix-urgency-label { text-align: left; } }

@@ -1,5 +1,5 @@
 {
-	"name": "task-quadrant",
+	"name": "obsidian-eisenhower-matrix",
 	"version": "0.1.0",
 	"description": "An Eisenhower matrix task manager for Obsidian.",
 	"main": "main.js",

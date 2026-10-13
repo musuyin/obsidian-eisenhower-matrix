@@ -1,9 +1,9 @@
 {
-  "id": "task-quadrant",
-  "name": "Task Quadrant",
+  "id": "obsidian-eisenhower-matrix",
+  "name": "Obsidian Eisenhower Matrix",
   "version": "0.1.0",
   "minAppVersion": "1.5.0",
   "description": "Manage tasks in an Eisenhower matrix as a dedicated Obsidian view.",
-  "author": "Task Quadrant contributors",
+  "author": "Obsidian Eisenhower Matrix contributors",
   "isDesktopOnly": false
 }
