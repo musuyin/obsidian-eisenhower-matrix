@@ -45,7 +45,9 @@ export class TaskEditor {
 		dueDate.createEl('label', { text: this.t('dueDate') });
 		const dueDateInput = dueDate.createEl('input', { type: 'datetime-local', value: this.draft.dueDate ?? '', attr: { step: '3600' } });
 		const shortcuts = dueDate.createDiv({ cls: 'obsidian-eisenhower-matrix-date-shortcuts' });
-		shortcuts.createEl('button', { text: this.t('nullDueDate'), cls: 'obsidian-eisenhower-matrix-date-shortcut', attr: { type: 'button' } }).addEventListener('click', () => {
+		const clearDueDate = shortcuts.createEl('button', { text: this.t('nullDueDate'), cls: 'obsidian-eisenhower-matrix-date-shortcut', attr: { type: 'button' } });
+		clearDueDate.addEventListener('mousedown', (event) => event.preventDefault());
+		clearDueDate.addEventListener('click', () => {
 			this.draft.dueDate = undefined;
 			dueDateInput.value = '';
 			this.persist();
@@ -58,14 +60,19 @@ export class TaskEditor {
 			['nextMonth', () => this.addMonths(new Date(), 1)],
 		];
 		shortcutValues.forEach(([key, getDate]) => {
-			shortcuts.createEl('button', { text: this.t(key), cls: 'obsidian-eisenhower-matrix-date-shortcut', attr: { type: 'button' } }).addEventListener('click', () => {
+			const shortcut = shortcuts.createEl('button', { text: this.t(key), cls: 'obsidian-eisenhower-matrix-date-shortcut', attr: { type: 'button' } });
+			shortcut.addEventListener('mousedown', (event) => event.preventDefault());
+			shortcut.addEventListener('click', () => {
 				this.draft.dueDate = this.formatLocalDate(getDate());
 				dueDateInput.value = this.draft.dueDate;
 				this.persist();
 			});
 		});
-		dueDateInput.addEventListener('change', () => {
-			this.draft.dueDate = this.normalizeDueDate(dueDateInput.value);
+		const updateDueDateDraft = () => { this.draft.dueDate = this.normalizeDueDate(dueDateInput.value); };
+		dueDateInput.addEventListener('input', updateDueDateDraft);
+		dueDateInput.addEventListener('change', updateDueDateDraft);
+		dueDateInput.addEventListener('blur', () => {
+			updateDueDateDraft();
 			this.persist();
 		});
 
