@@ -12,21 +12,34 @@ export class TaskStore {
 	) {}
 
 	async load(): Promise<TaskStoreData> {
-		const file = this.vault.getAbstractFileByPath(this.getPath());
-		if (!(file instanceof TFile)) return structuredClone(EMPTY_STORE);
+		const active = await this.readFile(this.getPath());
+		const completed = await this.readFile(this.getCompletedPath());
+		return { version: 1, tasks: [...active.tasks, ...completed.tasks] };
+	}
 
-		const parsed: unknown = JSON.parse(await this.vault.read(file));
-		if (!this.isStoreData(parsed)) throw new Error(`Obsidian Eisenhower Matrix: invalid task data in ${this.getPath()}.`);
-		return parsed;
+	getCompletedPath(): string {
+		const path = this.getPath();
+		return path.toLowerCase().endsWith('.json') ? `${path.slice(0, -5)}-completed.json` : `${path}-completed.json`;
 	}
 
 	async save(data: TaskStoreData): Promise<void> {
-		this.writeQueue = this.writeQueue.then(() => this.writeNow(data));
+		const snapshot = structuredClone(data);
+		this.writeQueue = this.writeQueue.then(async () => {
+			await this.writeNow(this.getPath(), { version: 1, tasks: snapshot.tasks.filter((task) => !task.completed) });
+			await this.writeNow(this.getCompletedPath(), { version: 1, tasks: snapshot.tasks.filter((task) => task.completed) });
+		});
 		return this.writeQueue;
 	}
 
-	private async writeNow(data: TaskStoreData): Promise<void> {
-		const path = this.getPath();
+	private async readFile(path: string): Promise<TaskStoreData> {
+		const file = this.vault.getAbstractFileByPath(path);
+		if (!(file instanceof TFile)) return structuredClone(EMPTY_STORE);
+		const parsed: unknown = JSON.parse(await this.vault.read(file));
+		if (!this.isStoreData(parsed)) throw new Error(`Obsidian Eisenhower Matrix: invalid task data in ${path}.`);
+		return parsed;
+	}
+
+	private async writeNow(path: string, data: TaskStoreData): Promise<void> {
 		const existing = this.vault.getAbstractFileByPath(path);
 		const contents = JSON.stringify(data, null, 2);
 		if (existing instanceof TFile) {

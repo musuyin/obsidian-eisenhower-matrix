@@ -18,7 +18,7 @@ export default class ObsidianEisenhowerMatrixPlugin extends Plugin {
 		this.addCommand({ id: 'open', name: translate(this.settings.language, 'viewTitle'), callback: () => void this.activateView() });
 		this.addSettingTab(new ObsidianEisenhowerMatrixSettingTab(this.app, this));
 		this.registerEvent(this.app.vault.on('modify', (file) => {
-			if (file.path === this.settings.dataFilePath) void this.refreshViews();
+			if (file.path === this.settings.dataFilePath || file.path === this.store.getCompletedPath()) void this.refreshViews();
 		}));
 		this.registerDomEvent(window, 'resize', () => void this.refreshViews());
 	}
@@ -37,13 +37,7 @@ export default class ObsidianEisenhowerMatrixPlugin extends Plugin {
 	async createQuickTask(title: string, quadrant: Quadrant): Promise<void> {
 		const trimmedTitle = title.trim();
 		if (!trimmedTitle) return;
-		await this.createTask({ title: trimmedTitle, description: '', quadrant, links: [], subtasks: [], dueDate: this.defaultDueDate() });
-	}
-
-	private defaultDueDate(): string {
-		const now = new Date();
-		now.setMinutes(0, 0, 0);
-		return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:00`;
+		await this.createTask({ title: trimmedTitle, description: '', quadrant, links: [], subtasks: [] });
 	}
 
 	async createTask(draft: TaskDraft): Promise<void> {
