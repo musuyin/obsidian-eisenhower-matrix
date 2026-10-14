@@ -43,7 +43,7 @@ export class TaskEditor {
 
 		const dueDate = fields.createDiv({ cls: 'obsidian-eisenhower-matrix-detail-field' });
 		dueDate.createEl('label', { text: this.t('dueDate') });
-		const dueDateInput = dueDate.createEl('input', { type: 'datetime-local', value: this.draft.dueDate ?? '' });
+		const dueDateInput = dueDate.createEl('input', { type: 'datetime-local', value: this.draft.dueDate ?? '', attr: { step: '3600' } });
 		dueDateInput.addEventListener('change', () => { this.draft.dueDate = dueDateInput.value || undefined; this.persist(); });
 
 		const description = fields.createDiv({ cls: 'obsidian-eisenhower-matrix-detail-field' });

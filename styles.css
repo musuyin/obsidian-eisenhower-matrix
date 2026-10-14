@@ -8,14 +8,15 @@
 .obsidian-eisenhower-matrix-quick-create select { max-width: 12rem; }
 .obsidian-eisenhower-matrix-section-title { margin: 1.5rem 0 .7rem; font-size: 1rem; color: var(--text-muted); }
 .obsidian-eisenhower-matrix-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
-.obsidian-eisenhower-matrix-panel { min-height: 180px; padding: 1rem; border: 1px solid var(--background-modifier-border); border-radius: 10px; background: var(--background-primary); transition: border-color 120ms ease, background-color 120ms ease; }
+.obsidian-eisenhower-matrix-panel { min-height: 180px; padding: 1rem; border: 1px solid var(--background-modifier-border); border-top: 3px solid var(--eisenhower-panel-accent); border-radius: 10px; background: var(--background-primary); transition: border-color 120ms ease, background-color 120ms ease; }
 .obsidian-eisenhower-matrix-panel.is-drag-target { border-color: var(--interactive-accent); background: var(--background-secondary); }
-.obsidian-eisenhower-matrix-important-urgent { border-top: 3px solid var(--color-red); }
-.obsidian-eisenhower-matrix-important-not-urgent { border-top: 3px solid var(--color-blue); }
-.obsidian-eisenhower-matrix-not-important-urgent { border-top: 3px solid var(--color-orange); }
-.obsidian-eisenhower-matrix-not-important-not-urgent { border-top: 3px solid var(--text-faint); }
-.obsidian-eisenhower-matrix-panel-heading { margin-bottom: .75rem; }
+.obsidian-eisenhower-matrix-important-urgent { --eisenhower-panel-accent: var(--color-red); }
+.obsidian-eisenhower-matrix-important-not-urgent { --eisenhower-panel-accent: var(--color-blue); }
+.obsidian-eisenhower-matrix-not-important-urgent { --eisenhower-panel-accent: var(--color-orange); }
+.obsidian-eisenhower-matrix-not-important-not-urgent { --eisenhower-panel-accent: var(--text-faint); }
+.obsidian-eisenhower-matrix-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: .75rem; }
 .obsidian-eisenhower-matrix-panel-heading h3 { margin: 0; font-size: .95rem; }
+.obsidian-eisenhower-matrix-panel-summary { color: var(--text-muted); font-size: .75rem; white-space: nowrap; }
 .obsidian-eisenhower-matrix-task-list { display: grid; gap: .5rem; }
 .obsidian-eisenhower-matrix-task { border: 1px solid var(--background-modifier-border); border-radius: 7px; padding: .65rem; background: var(--background-secondary); cursor: pointer; }
 .obsidian-eisenhower-matrix-task[draggable='true'] { cursor: grab; }
@@ -24,13 +25,15 @@
 .obsidian-eisenhower-matrix-task.is-selected { box-shadow: 0 0 0 1px var(--interactive-accent); }
 .obsidian-eisenhower-matrix-task.is-completed { opacity: .62; }
 .obsidian-eisenhower-matrix-task.is-completed .obsidian-eisenhower-matrix-task-title { text-decoration: line-through; }
-.obsidian-eisenhower-matrix-task-top { display: flex; align-items: center; gap: .45rem; }
+.obsidian-eisenhower-matrix-task-top { display: flex; align-items: center; justify-content: flex-start; gap: .45rem; text-align: left; }
 .obsidian-eisenhower-matrix-task-top input { flex: 0 0 auto; margin: 0; }
-.obsidian-eisenhower-matrix-task-title, .obsidian-eisenhower-matrix-subtask-title { flex: 0 1 68%; min-width: 0; padding: 0; border: 0; box-shadow: none; background: transparent; color: var(--text-normal); text-align: left; cursor: text; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.obsidian-eisenhower-matrix-task-title, .obsidian-eisenhower-matrix-subtask-title { flex: 0 1 68%; min-width: 0; padding: 0; border: 0; box-shadow: none; background: transparent; color: var(--text-normal); text-align: left !important; justify-content: flex-start; cursor: text; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .obsidian-eisenhower-matrix-inline-title, .obsidian-eisenhower-matrix-inline-create { flex: 0 1 68%; min-width: 0; font: inherit; }
 .obsidian-eisenhower-matrix-inline-create { width: 100%; box-sizing: border-box; }
-.obsidian-eisenhower-matrix-subtasks { display: grid; gap: .3rem; margin: .55rem 0 0 1.55rem; padding-top: .5rem; border-top: 1px solid var(--background-modifier-border); }
-.obsidian-eisenhower-matrix-subtask { display: flex; align-items: center; gap: .4rem; color: var(--text-muted); font-size: .82rem; }
+.obsidian-eisenhower-matrix-task-due-date, .obsidian-eisenhower-matrix-task-progress { margin: .45rem 0 0 1.55rem; color: var(--text-muted); font-size: .78rem; text-align: left; }
+.obsidian-eisenhower-matrix-task-due-date + .obsidian-eisenhower-matrix-task-progress { margin-top: .2rem; }
+.obsidian-eisenhower-matrix-subtasks { display: grid; gap: .3rem; margin: .55rem 0 0 1.55rem; padding-top: .5rem; border-top: 1px solid var(--background-modifier-border); text-align: left; }
+.obsidian-eisenhower-matrix-subtask { display: flex; align-items: center; justify-content: flex-start; gap: .4rem; color: var(--text-muted); font-size: .82rem; text-align: left; }
 .obsidian-eisenhower-matrix-subtask-title { font-size: inherit; font-weight: 400; color: inherit; }
 .obsidian-eisenhower-matrix-subtask input { margin: 0; }
 .obsidian-eisenhower-matrix-subtask-toggle, .obsidian-eisenhower-matrix-details-toggle { border: 0; background: transparent; box-shadow: none; color: var(--text-muted); padding: .15rem; cursor: pointer; }
@@ -50,4 +53,4 @@
 .obsidian-eisenhower-matrix-secondary-button { margin-top: .25rem; }
 .obsidian-eisenhower-matrix-detail-actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: 1.5rem; }
 .obsidian-eisenhower-matrix-detail-actions .mod-warning { margin-right: auto; }
-@media (max-width: 700px) { .obsidian-eisenhower-matrix-view { padding: 1rem; } .obsidian-eisenhower-matrix-header { align-items: flex-start; flex-direction: column; } .obsidian-eisenhower-matrix-grid, .obsidian-eisenhower-matrix-detail-fields { grid-template-columns: 1fr; } .obsidian-eisenhower-matrix-quick-create { align-items: stretch; flex-direction: column; } .obsidian-eisenhower-matrix-quick-create select { max-width: none; } }
+@media (max-width: 700px) { .obsidian-eisenhower-matrix-view { padding: 1rem; } .obsidian-eisenhower-matrix-header { align-items: flex-start; flex-direction: column; } .obsidian-eisenhower-matrix-grid, .obsidian-eisenhower-matrix-detail-fields { grid-template-columns: 1fr; } .obsidian-eisenhower-matrix-quick-create { align-items: stretch; flex-direction: column; } .obsidian-eisenhower-matrix-quick-create select { max-width: none; } .obsidian-eisenhower-matrix-panel { min-height: 140px; } }

@@ -42,8 +42,8 @@ export default class ObsidianEisenhowerMatrixPlugin extends Plugin {
 
 	private defaultDueDate(): string {
 		const now = new Date();
-		now.setSeconds(0, 0);
-		return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+		now.setMinutes(0, 0, 0);
+		return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:00`;
 	}
 
 	async createTask(draft: TaskDraft): Promise<void> {
@@ -82,16 +82,35 @@ export default class ObsidianEisenhowerMatrixPlugin extends Plugin {
 		const task = data.tasks.find((candidate) => candidate.id === id);
 		if (!task) return;
 		const wasCompleted = task.completed;
+		const originalQuadrant = task.quadrant;
 		Object.assign(task, patch, { updatedAt: new Date().toISOString() });
 		if (!wasCompleted && task.completed) task.completedAt = new Date().toISOString();
 		if (wasCompleted && !task.completed) delete task.completedAt;
+		if (originalQuadrant !== task.quadrant) {
+			task.order = data.tasks.filter((candidate) => candidate.id !== task.id && candidate.quadrant === task.quadrant).length;
+			this.normalizeOrders(data.tasks, originalQuadrant, task.quadrant);
+		}
 		await this.store.save(data); await this.refreshViews();
 	}
 
 	async deleteTask(id: string): Promise<void> {
 		const data = await this.store.load();
+		const task = data.tasks.find((candidate) => candidate.id === id);
 		data.tasks = data.tasks.filter((task) => task.id !== id);
+		if (task) this.normalizeOrders(data.tasks, task.quadrant);
 		await this.store.save(data); await this.refreshViews();
+	}
+
+	async setShowCompletedTasks(value: boolean): Promise<void> {
+		this.settings.showCompletedTasks = value;
+		await this.saveSettings();
+		await this.refreshViews();
+	}
+
+	private normalizeOrders(tasks: QuadrantTask[], ...quadrants: Quadrant[]): void {
+		for (const quadrant of new Set(quadrants)) {
+			tasks.filter((task) => task.quadrant === quadrant).sort((left, right) => left.order - right.order).forEach((task, order) => { task.order = order; });
+		}
 	}
 
 	async refreshViews(): Promise<void> {
