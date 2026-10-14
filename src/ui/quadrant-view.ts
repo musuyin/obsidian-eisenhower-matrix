@@ -59,9 +59,8 @@ export class ObsidianEisenhowerMatrixView extends ItemView {
 		const panel = grid.createDiv({ cls: `obsidian-eisenhower-matrix-panel obsidian-eisenhower-matrix-${quadrant}` });
 		const heading = panel.createDiv({ cls: 'obsidian-eisenhower-matrix-panel-heading' });
 		heading.createEl('h3', { text: quadrantLabel(this.plugin.settings.language, quadrant) });
-		const total = this.tasks.filter((task) => task.quadrant === quadrant).length;
-		const completed = this.tasks.filter((task) => task.quadrant === quadrant && task.completed).length;
-		heading.createDiv({ cls: 'obsidian-eisenhower-matrix-panel-summary', text: this.t('taskCount', { completed: String(completed), total: String(total) }) });
+		const total = this.tasks.filter((task) => task.quadrant === quadrant && !task.completed).length;
+		heading.createDiv({ cls: 'obsidian-eisenhower-matrix-panel-summary', text: this.t('taskCount', { total: String(total) }) });
 		const list = panel.createDiv({ cls: 'obsidian-eisenhower-matrix-task-list' });
 		list.addEventListener('dragover', (event) => { event.preventDefault(); panel.addClass('is-drag-target'); });
 		list.addEventListener('dragleave', () => panel.removeClass('is-drag-target'));
@@ -119,8 +118,7 @@ export class ObsidianEisenhowerMatrixView extends ItemView {
 		if (task.subtasks.length) {
 			const completedSubtasks = task.subtasks.filter((subtask) => subtask.completed).length;
 			card.createDiv({ cls: 'obsidian-eisenhower-matrix-task-progress', text: this.t('subtaskProgress', { completed: String(completedSubtasks), total: String(task.subtasks.length) }) });
-		}
-		if (task.subtasks.length) {
+
 			const toggle = top.createEl('button', { cls: 'obsidian-eisenhower-matrix-subtask-toggle', attr: { 'aria-label': this.expandedSubtaskTaskIds.has(task.id) ? this.t('collapseSubtasks') : this.t('expandSubtasks') } });
 			setIcon(toggle, this.expandedSubtaskTaskIds.has(task.id) ? 'chevron-up' : 'chevron-down');
 			toggle.addEventListener('click', (event) => { event.stopPropagation(); if (this.expandedSubtaskTaskIds.has(task.id)) this.expandedSubtaskTaskIds.delete(task.id); else this.expandedSubtaskTaskIds.add(task.id); this.render(); });

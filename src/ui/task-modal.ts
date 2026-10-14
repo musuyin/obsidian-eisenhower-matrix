@@ -44,7 +44,10 @@ export class TaskEditor {
 		const dueDate = fields.createDiv({ cls: 'obsidian-eisenhower-matrix-detail-field' });
 		dueDate.createEl('label', { text: this.t('dueDate') });
 		const dueDateInput = dueDate.createEl('input', { type: 'datetime-local', value: this.draft.dueDate ?? '', attr: { step: '3600' } });
-		dueDateInput.addEventListener('change', () => { this.draft.dueDate = dueDateInput.value || undefined; this.persist(); });
+		dueDateInput.addEventListener('blur', () => {
+			this.draft.dueDate = this.normalizeDueDate(dueDateInput.value);
+			this.persist();
+		});
 
 		const description = fields.createDiv({ cls: 'obsidian-eisenhower-matrix-detail-field' });
 		description.createEl('label', { text: this.t('description') });
@@ -52,11 +55,18 @@ export class TaskEditor {
 		area.addEventListener('input', () => { this.draft.description = area.value; });
 		area.addEventListener('blur', () => this.persist());
 
-		this.renderLinks();
 		this.renderSubtasks();
+		this.renderLinks();
 		const actions = this.container.createDiv({ cls: 'obsidian-eisenhower-matrix-detail-actions' });
 		const remove = actions.createEl('button', { text: this.t('deleteTask'), cls: 'mod-warning' });
 		remove.addEventListener('click', this.onDelete);
+	}
+
+	private normalizeDueDate(value: string): string | undefined {
+		if (!value) return undefined;
+		const [date, time] = value.split('T');
+		const hour = time?.slice(0, 2);
+		return date && hour ? `${date}T${hour}:00` : undefined;
 	}
 
 	private persist(): void {
@@ -105,16 +115,44 @@ export class TaskEditor {
 				const row = rows.createDiv({ cls: 'obsidian-eisenhower-matrix-modal-row' });
 				const checkbox = row.createEl('input', { type: 'checkbox' }); checkbox.checked = subtask.completed;
 				checkbox.addEventListener('change', () => { subtask.completed = checkbox.checked; this.persist(); });
+				const initialTitle = subtask.title;
 				const input = row.createEl('input', { type: 'text', value: subtask.title, placeholder: this.t('subtaskPlaceholder') });
 				input.addEventListener('input', () => { subtask.title = input.value; });
-				input.addEventListener('blur', () => this.persist());
+				input.addEventListener('keydown', (event) => {
+					if (event.key !== 'Enter') return;
+					event.preventDefault();
+					if (!input.value.trim()) {
+						if (!initialTitle) this.draft.subtasks.splice(index, 1);
+						else subtask.title = initialTitle;
+						draw();
+						this.persist();
+						return;
+					}
+					subtask.title = input.value.trim();
+					this.draft.subtasks.splice(index + 1, 0, { id: crypto.randomUUID(), title: '', completed: false, order: index + 1 });
+					draw();
+					(rows.children[index + 1]?.querySelector('input[type="text"]') as HTMLInputElement | null)?.focus();
+					this.persist();
+				});
+				input.addEventListener('blur', () => {
+					if (!input.value.trim()) {
+						if (!initialTitle) this.draft.subtasks.splice(index, 1);
+						else subtask.title = initialTitle;
+						draw();
+					}
+					this.persist();
+				});
 				const remove = row.createEl('button', { text: this.t('remove'), cls: 'mod-warning' });
 				remove.addEventListener('click', () => { this.draft.subtasks.splice(index, 1); this.persist(); draw(); });
 			});
 		};
 		draw();
 		const add = group.createEl('button', { text: this.t('addSubtask'), cls: 'obsidian-eisenhower-matrix-secondary-button' });
-		add.addEventListener('click', () => { this.draft.subtasks.push({ id: crypto.randomUUID(), title: '', completed: false, order: this.draft.subtasks.length }); draw(); });
+		add.addEventListener('click', () => {
+			this.draft.subtasks.push({ id: crypto.randomUUID(), title: '', completed: false, order: this.draft.subtasks.length });
+			draw();
+			(rows.lastElementChild?.querySelector('input[type="text"]') as HTMLInputElement | null)?.focus();
+		});
 	}
 }
 
