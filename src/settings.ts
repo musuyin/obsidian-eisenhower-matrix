@@ -1,14 +1,17 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
+import { Language, translate } from './i18n';
 import ObsidianEisenhowerMatrixPlugin from './main';
 
 export interface ObsidianEisenhowerMatrixSettings {
 	dataFilePath: string;
 	showCompletedTasks: boolean;
+	language: Language;
 }
 
 export const DEFAULT_SETTINGS: ObsidianEisenhowerMatrixSettings = {
 	dataFilePath: 'TODO/obsidian-eisenhower-matrix.json',
 	showCompletedTasks: false,
+	language: 'en',
 };
 
 export class ObsidianEisenhowerMatrixSettingTab extends PluginSettingTab {
@@ -19,9 +22,10 @@ export class ObsidianEisenhowerMatrixSettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
+		const t = (key: Parameters<typeof translate>[1]) => translate(this.plugin.settings.language, key);
 		new Setting(containerEl)
-			.setName('任务数据文件')
-			.setDesc('相对于 Vault 根目录的 JSON 文件路径。修改后，新任务会保存到新位置。')
+			.setName(t('dataFileName'))
+			.setDesc(t('dataFileDesc'))
 			.addText((text) =>
 				text
 					.setPlaceholder('TODO/obsidian-eisenhower-matrix.json')
@@ -33,14 +37,30 @@ export class ObsidianEisenhowerMatrixSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('显示已完成任务')
-			.setDesc('在四象限中默认显示已完成的任务。')
+			.setName(t('showCompletedName'))
+			.setDesc(t('showCompletedDesc'))
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.showCompletedTasks).onChange(async (value) => {
 					this.plugin.settings.showCompletedTasks = value;
 					await this.plugin.saveSettings();
 					void this.plugin.refreshViews();
 				}),
+			);
+
+		new Setting(containerEl)
+			.setName(t('languageName'))
+			.setDesc(t('languageDesc'))
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption('en', t('english'))
+					.addOption('zh', t('chinese'))
+					.setValue(this.plugin.settings.language)
+					.onChange(async (value) => {
+						this.plugin.settings.language = value as Language;
+						await this.plugin.saveSettings();
+						this.display();
+						void this.plugin.refreshViews();
+					}),
 			);
 	}
 }

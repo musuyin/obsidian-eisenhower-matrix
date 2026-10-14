@@ -1,8 +1,9 @@
 import { Plugin, WorkspaceLeaf } from 'obsidian';
 import { TaskStore } from './data/task-store';
 import { DEFAULT_SETTINGS, ObsidianEisenhowerMatrixSettings, ObsidianEisenhowerMatrixSettingTab } from './settings';
-import { QuadrantTask } from './types';
+import { Quadrant, QuadrantTask } from './types';
 import { TaskDraft } from './ui/task-modal';
+import { translate } from './i18n';
 import { ObsidianEisenhowerMatrixView, VIEW_TYPE_OBSIDIAN_EISENHOWER_MATRIX } from './ui/quadrant-view';
 
 export default class ObsidianEisenhowerMatrixPlugin extends Plugin {
@@ -13,8 +14,8 @@ export default class ObsidianEisenhowerMatrixPlugin extends Plugin {
 		await this.loadSettings();
 		this.store = new TaskStore(this.app.vault, () => this.settings.dataFilePath);
 		this.registerView(VIEW_TYPE_OBSIDIAN_EISENHOWER_MATRIX, (leaf) => new ObsidianEisenhowerMatrixView(leaf, this));
-		this.addRibbonIcon('layout-grid', '打开任务四象限', () => void this.activateView());
-		this.addCommand({ id: 'open', name: '打开任务四象限', callback: () => void this.activateView() });
+		this.addRibbonIcon('layout-grid', translate(this.settings.language, 'viewTitle'), () => void this.activateView());
+		this.addCommand({ id: 'open', name: translate(this.settings.language, 'viewTitle'), callback: () => void this.activateView() });
 		this.addSettingTab(new ObsidianEisenhowerMatrixSettingTab(this.app, this));
 		this.registerEvent(this.app.vault.on('modify', (file) => {
 			if (file.path === this.settings.dataFilePath) void this.refreshViews();
@@ -31,6 +32,12 @@ export default class ObsidianEisenhowerMatrixPlugin extends Plugin {
 		const leaf: WorkspaceLeaf = existing ?? this.app.workspace.getLeaf('tab');
 		if (!existing) await leaf.setViewState({ type: VIEW_TYPE_OBSIDIAN_EISENHOWER_MATRIX, active: true });
 		leaf.setEphemeralState({ focus: true });
+	}
+
+	async createQuickTask(title: string, quadrant: Quadrant): Promise<void> {
+		const trimmedTitle = title.trim();
+		if (!trimmedTitle) return;
+		await this.createTask({ title: trimmedTitle, description: '', quadrant, links: [], subtasks: [] });
 	}
 
 	async createTask(draft: TaskDraft): Promise<void> {

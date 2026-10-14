@@ -28,6 +28,7 @@ export interface QuadrantTask {
 	subtasks: Subtask[];
 	createdAt: string;
 	updatedAt: string;
+	dueDate?: string;
 	completedAt?: string;
 }
 
