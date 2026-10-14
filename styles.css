@@ -1,5 +1,5 @@
-.obsidian-eisenhower-matrix-view { padding: 1.5rem; height: 100%; overflow: auto; }
-.obsidian-eisenhower-matrix-header { display: flex; justify-content: space-between; gap: 1rem; align-items: center; margin-bottom: 1.25rem; }
+.obsidian-eisenhower-matrix-view { padding: 1.5rem; height: 100%; overflow: auto; text-align: left; }
+.obsidian-eisenhower-matrix-header { display: flex; justify-content: space-between; gap: 1rem; align-items: center; margin-bottom: 1.25rem; text-align: left; }
 .obsidian-eisenhower-matrix-header h1 { margin: 0; font-size: 1.65rem; }
 .obsidian-eisenhower-matrix-header p { margin: .3rem 0 0; color: var(--text-muted); }
 .obsidian-eisenhower-matrix-actions { display: flex; gap: .5rem; }
@@ -26,13 +26,15 @@
 .obsidian-eisenhower-matrix-task.is-completed .obsidian-eisenhower-matrix-task-title { text-decoration: line-through; }
 .obsidian-eisenhower-matrix-task-top { display: flex; align-items: center; gap: .45rem; }
 .obsidian-eisenhower-matrix-task-top input { flex: 0 0 auto; margin: 0; }
-.obsidian-eisenhower-matrix-task-title, .obsidian-eisenhower-matrix-subtask-title { flex: 1; padding: 0; border: 0; box-shadow: none; background: transparent; color: var(--text-normal); text-align: left; cursor: text; font-weight: 600; }
-.obsidian-eisenhower-matrix-inline-title, .obsidian-eisenhower-matrix-inline-create { flex: 1; min-width: 0; font: inherit; }
+.obsidian-eisenhower-matrix-task-title, .obsidian-eisenhower-matrix-subtask-title { flex: 0 1 68%; min-width: 0; padding: 0; border: 0; box-shadow: none; background: transparent; color: var(--text-normal); text-align: left; cursor: text; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.obsidian-eisenhower-matrix-inline-title, .obsidian-eisenhower-matrix-inline-create { flex: 0 1 68%; min-width: 0; font: inherit; }
 .obsidian-eisenhower-matrix-inline-create { width: 100%; box-sizing: border-box; }
 .obsidian-eisenhower-matrix-subtasks { display: grid; gap: .3rem; margin: .55rem 0 0 1.55rem; padding-top: .5rem; border-top: 1px solid var(--background-modifier-border); }
 .obsidian-eisenhower-matrix-subtask { display: flex; align-items: center; gap: .4rem; color: var(--text-muted); font-size: .82rem; }
 .obsidian-eisenhower-matrix-subtask-title { font-size: inherit; font-weight: 400; color: inherit; }
 .obsidian-eisenhower-matrix-subtask input { margin: 0; }
+.obsidian-eisenhower-matrix-subtask-toggle, .obsidian-eisenhower-matrix-details-toggle { border: 0; background: transparent; box-shadow: none; color: var(--text-muted); padding: .15rem; cursor: pointer; }
+.obsidian-eisenhower-matrix-details-toggle { margin-left: auto; }
 .obsidian-eisenhower-matrix-subtask.is-completed span { text-decoration: line-through; opacity: .7; }
 .obsidian-eisenhower-matrix-empty { color: var(--text-faint); text-align: center; padding: 1.5rem 0; font-size: .88rem; }
 .obsidian-eisenhower-matrix-details { margin-top: .5rem; padding-bottom: 2rem; }

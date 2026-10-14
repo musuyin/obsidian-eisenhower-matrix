@@ -10,6 +10,7 @@ export class ObsidianEisenhowerMatrixView extends ItemView {
 	private tasks: QuadrantTask[] = [];
 	private showCompleted = false;
 	private selectedTaskId: string | null = null;
+	private readonly expandedSubtaskTaskIds = new Set<string>();
 
 	constructor(leaf: WorkspaceLeaf, private readonly plugin: ObsidianEisenhowerMatrixPlugin) { super(leaf); }
 
@@ -64,7 +65,7 @@ export class ObsidianEisenhowerMatrixView extends ItemView {
 		list.addEventListener('drop', (event) => {
 			event.preventDefault(); panel.removeClass('is-drag-target');
 			const taskId = event.dataTransfer?.getData('text/plain');
-			if (taskId) void this.moveTaskToQuadrant(taskId, quadrant);
+			if (taskId) void this.plugin.moveTask(taskId, quadrant);
 		});
 		list.addEventListener('dblclick', (event) => {
 			if (event.target === list || (event.target as HTMLElement).hasClass('obsidian-eisenhower-matrix-empty')) this.renderInlineCreate(list, quadrant);
@@ -94,6 +95,12 @@ export class ObsidianEisenhowerMatrixView extends ItemView {
 	private renderTask(list: HTMLElement, task: QuadrantTask): void {
 		const card = list.createDiv({ cls: `obsidian-eisenhower-matrix-task${task.completed ? ' is-completed' : ''}${task.id === this.selectedTaskId ? ' is-selected' : ''}`, attr: { draggable: 'true' } });
 		card.addEventListener('dragstart', (event) => { event.dataTransfer?.setData('text/plain', task.id); if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'; });
+		card.addEventListener('dragover', (event) => event.preventDefault());
+		card.addEventListener('drop', (event) => {
+			event.preventDefault(); event.stopPropagation();
+			const taskId = event.dataTransfer?.getData('text/plain');
+			if (taskId && taskId !== task.id) void this.plugin.moveTask(taskId, task.quadrant, task.id);
+		});
 		const top = card.createDiv({ cls: 'obsidian-eisenhower-matrix-task-top' });
 		const checkbox = top.createEl('input', { type: 'checkbox', attr: { 'aria-label': this.t('completed') } });
 		checkbox.checked = task.completed;
@@ -101,10 +108,18 @@ export class ObsidianEisenhowerMatrixView extends ItemView {
 		checkbox.addEventListener('change', () => void this.plugin.updateTask(task.id, { completed: checkbox.checked }));
 		const taskTitle = top.createEl('button', { text: task.title, cls: 'obsidian-eisenhower-matrix-task-title' });
 		taskTitle.addEventListener('click', (event) => { event.stopPropagation(); this.selectedTaskId = task.id; this.replaceTaskTitle(taskTitle, task); });
+		const details = top.createEl('button', { cls: 'obsidian-eisenhower-matrix-details-toggle', attr: { 'aria-label': this.t('taskDetails') } });
+		setIcon(details, 'info');
+		details.addEventListener('click', (event) => { event.stopPropagation(); this.selectedTaskId = task.id; this.render(); });
 		card.addEventListener('click', () => { this.selectedTaskId = task.id; this.render(); });
 		if (task.subtasks.length) {
-			const subtasks = card.createDiv({ cls: 'obsidian-eisenhower-matrix-subtasks' });
-			[...task.subtasks].sort((a, b) => a.order - b.order).forEach((subtask) => this.renderSubtask(subtasks, task, subtask));
+			const toggle = top.createEl('button', { cls: 'obsidian-eisenhower-matrix-subtask-toggle', attr: { 'aria-label': this.expandedSubtaskTaskIds.has(task.id) ? this.t('collapseSubtasks') : this.t('expandSubtasks') } });
+			setIcon(toggle, this.expandedSubtaskTaskIds.has(task.id) ? 'chevron-up' : 'chevron-down');
+			toggle.addEventListener('click', (event) => { event.stopPropagation(); if (this.expandedSubtaskTaskIds.has(task.id)) this.expandedSubtaskTaskIds.delete(task.id); else this.expandedSubtaskTaskIds.add(task.id); this.render(); });
+			if (this.expandedSubtaskTaskIds.has(task.id)) {
+				const subtasks = card.createDiv({ cls: 'obsidian-eisenhower-matrix-subtasks' });
+				[...task.subtasks].sort((a, b) => a.order - b.order).forEach((subtask) => this.renderSubtask(subtasks, task, subtask));
+			}
 		}
 	}
 
@@ -150,10 +165,6 @@ export class ObsidianEisenhowerMatrixView extends ItemView {
 
 	private updateSubtask(task: QuadrantTask, subtaskId: string, patch: Partial<Subtask>): void {
 		void this.plugin.updateTask(task.id, { subtasks: task.subtasks.map((item) => item.id === subtaskId ? { ...item, ...patch } : item) });
-	}
-	private moveTaskToQuadrant(taskId: string, quadrant: Quadrant): void {
-		const task = this.tasks.find((candidate) => candidate.id === taskId);
-		if (task && task.quadrant !== quadrant) void this.plugin.updateTask(taskId, { quadrant, order: this.tasks.filter((candidate) => candidate.quadrant === quadrant).length });
 	}
 
 	private renderDetails(root: HTMLElement): void {

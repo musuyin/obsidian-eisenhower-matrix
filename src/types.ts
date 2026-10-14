@@ -28,7 +28,7 @@ export interface QuadrantTask {
 	subtasks: Subtask[];
 	createdAt: string;
 	updatedAt: string;
-	dueDate?: string;
+	dueDate?: string; // Local date-time string, e.g. 2026-10-14T09:30
 	completedAt?: string;
 }
 
