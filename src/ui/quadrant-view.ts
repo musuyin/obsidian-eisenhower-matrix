@@ -10,6 +10,7 @@ export class ObsidianEisenhowerMatrixView extends ItemView {
 	private tasks: QuadrantTask[] = [];
 	private showCompleted = false;
 	private selectedTaskId: string | null = null;
+	private pendingCardSelection: number | null = null;
 	private readonly expandedSubtaskTaskIds = new Set<string>();
 
 	constructor(leaf: WorkspaceLeaf, private readonly plugin: ObsidianEisenhowerMatrixPlugin) { super(leaf); }
@@ -18,7 +19,7 @@ export class ObsidianEisenhowerMatrixView extends ItemView {
 	getDisplayText(): string { return translate(this.plugin.settings.language, 'viewTitle'); }
 	getIcon(): string { return 'layout-grid'; }
 	async onOpen(): Promise<void> { await this.reload(); }
-	async onClose(): Promise<void> { this.contentEl.empty(); }
+	async onClose(): Promise<void> { this.clearPendingCardSelection(); this.contentEl.empty(); }
 	async reload(): Promise<void> {
 		this.tasks = (await this.plugin.store.load()).tasks;
 		this.showCompleted = this.plugin.settings.showCompletedTasks;
@@ -29,15 +30,13 @@ export class ObsidianEisenhowerMatrixView extends ItemView {
 	private get t() { return (key: Parameters<typeof translate>[1], values?: Record<string, string>) => translate(this.plugin.settings.language, key, values); }
 
 	private render(): void {
+		this.clearPendingCardSelection();
 		const root = this.contentEl;
 		root.empty(); root.addClass('obsidian-eisenhower-matrix-view');
 		const header = root.createDiv({ cls: 'obsidian-eisenhower-matrix-header' });
 		const title = header.createDiv();
 		title.createEl('h1', { text: this.t('viewTitle') });
 		title.createEl('p', { text: this.t('viewDescription') });
-		const actions = header.createDiv({ cls: 'obsidian-eisenhower-matrix-actions' });
-		const completedButton = actions.createEl('button', { text: this.showCompleted ? this.t('hideCompleted') : this.t('showCompleted'), attr: { 'aria-pressed': String(this.showCompleted) } });
-		completedButton.addEventListener('click', () => void this.plugin.setShowCompletedTasks(!this.showCompleted));
 
 		const create = root.createDiv({ cls: 'obsidian-eisenhower-matrix-quick-create' });
 		const input = create.createEl('input', { type: 'text', placeholder: this.t('quickCreatePlaceholder'), attr: { 'aria-label': this.t('quickCreatePlaceholder') } });
@@ -52,6 +51,7 @@ export class ObsidianEisenhowerMatrixView extends ItemView {
 		root.createEl('h2', { cls: 'obsidian-eisenhower-matrix-section-title', text: this.t('taskCollection') });
 		const grid = root.createDiv({ cls: 'obsidian-eisenhower-matrix-grid' });
 		QUADRANTS.forEach((quadrant) => this.renderQuadrant(grid, quadrant));
+		this.renderCompletedTasks(root);
 		this.renderDetails(root);
 	}
 
@@ -62,17 +62,24 @@ export class ObsidianEisenhowerMatrixView extends ItemView {
 		const total = this.tasks.filter((task) => task.quadrant === quadrant && !task.completed).length;
 		heading.createDiv({ cls: 'obsidian-eisenhower-matrix-panel-summary', text: this.t('taskCount', { total: String(total) }) });
 		const list = panel.createDiv({ cls: 'obsidian-eisenhower-matrix-task-list' });
-		list.addEventListener('dragover', (event) => { event.preventDefault(); panel.addClass('is-drag-target'); });
-		list.addEventListener('dragleave', () => panel.removeClass('is-drag-target'));
+		list.addEventListener('dragover', (event) => {
+			event.preventDefault();
+			if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+			panel.addClass('is-drag-target');
+		});
+		list.addEventListener('dragleave', (event) => { if (!list.contains(event.relatedTarget as Node | null)) panel.removeClass('is-drag-target'); });
 		list.addEventListener('drop', (event) => {
-			event.preventDefault(); panel.removeClass('is-drag-target');
+			event.preventDefault(); panel.removeClass('is-drag-target'); this.clearDropIndicators();
 			const taskId = event.dataTransfer?.getData('text/plain');
 			if (taskId) void this.plugin.moveTask(taskId, quadrant);
 		});
-		list.addEventListener('dblclick', (event) => {
-			if (event.target === list || (event.target as HTMLElement).hasClass('obsidian-eisenhower-matrix-empty')) this.renderInlineCreate(list, quadrant);
+		panel.addEventListener('dblclick', (event) => {
+			const target = event.target;
+			if (!(target instanceof HTMLElement) || target.closest('button, input, select, textarea, a, [contenteditable="true"]')) return;
+			this.clearPendingCardSelection();
+			this.renderInlineCreate(list, quadrant);
 		});
-		const tasks = this.tasks.filter((task) => task.quadrant === quadrant && (this.showCompleted || !task.completed)).sort((a, b) => a.order - b.order);
+		const tasks = this.tasks.filter((task) => task.quadrant === quadrant && !task.completed).sort((a, b) => a.order - b.order);
 		if (!tasks.length) list.createDiv({ cls: 'obsidian-eisenhower-matrix-empty', text: this.t('doubleClickToAdd') });
 		tasks.forEach((task) => this.renderTask(list, task));
 	}
@@ -94,16 +101,35 @@ export class ObsidianEisenhowerMatrixView extends ItemView {
 		input.focus();
 	}
 
-	private renderTask(list: HTMLElement, task: QuadrantTask): void {
-		const card = list.createDiv({ cls: `obsidian-eisenhower-matrix-task${task.completed ? ' is-completed' : ''}${task.id === this.selectedTaskId ? ' is-selected' : ''}`, attr: { draggable: 'true' } });
-		card.addEventListener('dragstart', (event) => { event.dataTransfer?.setData('text/plain', task.id); if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'; });
-		card.addEventListener('dragover', (event) => event.preventDefault());
-		card.addEventListener('drop', (event) => {
-			event.preventDefault(); event.stopPropagation();
-			const taskId = event.dataTransfer?.getData('text/plain');
-			if (taskId && taskId !== task.id) void this.plugin.moveTask(taskId, task.quadrant, task.id);
-		});
+	private renderTask(list: HTMLElement, task: QuadrantTask, draggable = true): void {
+		const card = list.createDiv({ cls: `obsidian-eisenhower-matrix-task${task.completed ? ' is-completed' : ''}${task.id === this.selectedTaskId ? ' is-selected' : ''}` });
+		if (draggable) {
+			card.addEventListener('dragover', (event) => {
+				event.preventDefault(); event.stopPropagation(); this.clearDropIndicators();
+				card.addClass(event.clientY < card.getBoundingClientRect().top + card.offsetHeight / 2 ? 'is-drop-before' : 'is-drop-after');
+			});
+			card.addEventListener('drop', (event) => {
+				event.preventDefault(); event.stopPropagation();
+				const taskId = event.dataTransfer?.getData('text/plain');
+				const dropAfter = card.hasClass('is-drop-after'); this.clearDropIndicators();
+				if (!taskId || taskId === task.id) return;
+				const ordered = this.tasks.filter((item) => item.quadrant === task.quadrant && !item.completed && item.id !== taskId).sort((a, b) => a.order - b.order);
+				const index = ordered.findIndex((item) => item.id === task.id);
+				const beforeTaskId = dropAfter ? ordered[index + 1]?.id : task.id;
+				void this.plugin.moveTask(taskId, task.quadrant, beforeTaskId);
+			});
+		}
 		const top = card.createDiv({ cls: 'obsidian-eisenhower-matrix-task-top' });
+		if (draggable) {
+			const handle = top.createEl('button', { cls: 'obsidian-eisenhower-matrix-drag-handle', attr: { draggable: 'true', 'aria-label': this.t('dragTask') } });
+			setIcon(handle, 'grip-vertical');
+			handle.addEventListener('click', (event) => event.stopPropagation());
+			handle.addEventListener('dragstart', (event) => {
+				event.stopPropagation(); card.addClass('is-dragging'); event.dataTransfer?.setData('text/plain', task.id);
+				if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+			});
+			handle.addEventListener('dragend', () => { card.removeClass('is-dragging'); this.clearDropIndicators(); });
+		}
 		const checkbox = top.createEl('input', { type: 'checkbox', attr: { 'aria-label': this.t('completed') } });
 		checkbox.checked = task.completed;
 		checkbox.addEventListener('click', (event) => event.stopPropagation());
@@ -113,7 +139,16 @@ export class ObsidianEisenhowerMatrixView extends ItemView {
 		const details = top.createEl('button', { cls: 'obsidian-eisenhower-matrix-details-toggle', attr: { 'aria-label': this.t('taskDetails') } });
 		setIcon(details, 'info');
 		details.addEventListener('click', (event) => { event.stopPropagation(); this.selectedTaskId = task.id; this.render(); });
-		card.addEventListener('click', () => { this.selectedTaskId = task.id; this.render(); });
+		card.addEventListener('click', (event) => {
+			if (event.detail > 1) { this.clearPendingCardSelection(); return; }
+			this.clearPendingCardSelection();
+			this.pendingCardSelection = window.setTimeout(() => {
+				this.pendingCardSelection = null;
+				this.selectedTaskId = task.id;
+				this.render();
+			}, 400);
+		});
+		card.addEventListener('dblclick', () => this.clearPendingCardSelection());
 		if (task.dueDate) card.createDiv({ cls: 'obsidian-eisenhower-matrix-task-due-date', text: this.t('dueDateInCollection', { date: this.formatDueDate(task.dueDate) }) });
 		if (task.subtasks.length) {
 			const completedSubtasks = task.subtasks.filter((subtask) => subtask.completed).length;
@@ -132,7 +167,8 @@ export class ObsidianEisenhowerMatrixView extends ItemView {
 	private replaceTaskTitle(button: HTMLButtonElement, task: QuadrantTask): void {
 		const input = button.parentElement?.createEl('input', { cls: 'obsidian-eisenhower-matrix-inline-title', type: 'text', value: task.title });
 		if (!input) return;
-		button.hide(); input.focus(); input.select();
+		button.parentElement?.insertBefore(input, button);
+		button.hide(); input.focus(); input.setSelectionRange(0, input.value.length);
 		let settled = false;
 		const save = () => {
 			if (settled) return; settled = true;
@@ -157,7 +193,8 @@ export class ObsidianEisenhowerMatrixView extends ItemView {
 	private replaceSubtaskTitle(button: HTMLButtonElement, task: QuadrantTask, subtask: Subtask): void {
 		const input = button.parentElement?.createEl('input', { cls: 'obsidian-eisenhower-matrix-inline-title', type: 'text', value: subtask.title });
 		if (!input) return;
-		button.hide(); input.focus(); input.select();
+		button.parentElement?.insertBefore(input, button);
+		button.hide(); input.focus(); input.setSelectionRange(0, input.value.length);
 		let settled = false;
 		const save = () => {
 			if (settled) return; settled = true;
@@ -178,6 +215,30 @@ export class ObsidianEisenhowerMatrixView extends ItemView {
 
 	private updateSubtask(task: QuadrantTask, subtaskId: string, patch: Partial<Subtask>): void {
 		void this.plugin.updateTask(task.id, { subtasks: task.subtasks.map((item) => item.id === subtaskId ? { ...item, ...patch } : item) });
+	}
+
+	private renderCompletedTasks(root: HTMLElement): void {
+		const tasks = this.tasks.filter((task) => task.completed).sort((left, right) => (right.completedAt ?? '').localeCompare(left.completedAt ?? ''));
+		const section = root.createDiv({ cls: `obsidian-eisenhower-matrix-completed${this.showCompleted ? ' is-expanded' : ''}` });
+		const toggle = section.createEl('button', { cls: 'obsidian-eisenhower-matrix-completed-toggle', attr: { 'aria-expanded': String(this.showCompleted) } });
+		setIcon(toggle, this.showCompleted ? 'chevron-down' : 'chevron-right');
+		toggle.createSpan({ text: this.t('completedTasks') });
+		toggle.createSpan({ cls: 'obsidian-eisenhower-matrix-completed-count', text: String(tasks.length) });
+		toggle.addEventListener('click', () => void this.plugin.setShowCompletedTasks(!this.showCompleted));
+		if (!this.showCompleted) return;
+		const list = section.createDiv({ cls: 'obsidian-eisenhower-matrix-completed-list' });
+		if (!tasks.length) list.createDiv({ cls: 'obsidian-eisenhower-matrix-empty', text: this.t('noCompletedTasks') });
+		tasks.forEach((task) => this.renderTask(list, task, false));
+	}
+
+	private clearDropIndicators(): void {
+		this.contentEl.querySelectorAll('.is-drop-before, .is-drop-after, .is-drag-target').forEach((element) => element.removeClass('is-drop-before', 'is-drop-after', 'is-drag-target'));
+	}
+
+	private clearPendingCardSelection(): void {
+		if (this.pendingCardSelection === null) return;
+		window.clearTimeout(this.pendingCardSelection);
+		this.pendingCardSelection = null;
 	}
 
 	private renderDetails(root: HTMLElement): void {

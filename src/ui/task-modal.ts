@@ -41,18 +41,43 @@ export class TaskEditor {
 		select.value = this.draft.quadrant;
 		select.addEventListener('change', () => { this.draft.quadrant = select.value as Quadrant; this.persist(); });
 
-		const dueDate = fields.createDiv({ cls: 'obsidian-eisenhower-matrix-detail-field' });
+		const dueDate = fields.createDiv({ cls: 'obsidian-eisenhower-matrix-detail-field obsidian-eisenhower-matrix-due-field' });
 		dueDate.createEl('label', { text: this.t('dueDate') });
 		const dueDateInput = dueDate.createEl('input', { type: 'datetime-local', value: this.draft.dueDate ?? '', attr: { step: '3600' } });
-		dueDateInput.addEventListener('blur', () => {
+		const shortcuts = dueDate.createDiv({ cls: 'obsidian-eisenhower-matrix-date-shortcuts' });
+		shortcuts.createEl('button', { text: this.t('nullDueDate'), cls: 'obsidian-eisenhower-matrix-date-shortcut', attr: { type: 'button' } }).addEventListener('click', () => {
+			this.draft.dueDate = undefined;
+			dueDateInput.value = '';
+			this.persist();
+		});
+		const shortcutValues: Array<[Parameters<typeof translate>[1], () => Date]> = [
+			['today', () => new Date()],
+			['tomorrow', () => this.addDays(new Date(), 1)],
+			['dayAfterTomorrow', () => this.addDays(new Date(), 2)],
+			['nextWeek', () => this.addDays(new Date(), 7)],
+			['nextMonth', () => this.addMonths(new Date(), 1)],
+		];
+		shortcutValues.forEach(([key, getDate]) => {
+			shortcuts.createEl('button', { text: this.t(key), cls: 'obsidian-eisenhower-matrix-date-shortcut', attr: { type: 'button' } }).addEventListener('click', () => {
+				this.draft.dueDate = this.formatLocalDate(getDate());
+				dueDateInput.value = this.draft.dueDate;
+				this.persist();
+			});
+		});
+		dueDateInput.addEventListener('change', () => {
 			this.draft.dueDate = this.normalizeDueDate(dueDateInput.value);
 			this.persist();
 		});
 
-		const description = fields.createDiv({ cls: 'obsidian-eisenhower-matrix-detail-field' });
+		const description = fields.createDiv({ cls: 'obsidian-eisenhower-matrix-detail-field obsidian-eisenhower-matrix-description-field' });
 		description.createEl('label', { text: this.t('description') });
-		const area = description.createEl('textarea', { text: this.draft.description, placeholder: this.t('descriptionPlaceholder') });
-		area.addEventListener('input', () => { this.draft.description = area.value; });
+		const area = description.createEl('textarea', { text: this.draft.description, placeholder: this.t('descriptionPlaceholder'), attr: { rows: '1' } });
+		const resizeArea = () => {
+			area.setCssStyles({ height: 'auto' });
+			area.setCssStyles({ height: `${area.scrollHeight}px` });
+		};
+		resizeArea();
+		area.addEventListener('input', () => { this.draft.description = area.value; resizeArea(); });
 		area.addEventListener('blur', () => this.persist());
 
 		this.renderSubtasks();
@@ -67,6 +92,19 @@ export class TaskEditor {
 		const [date, time] = value.split('T');
 		const hour = time?.slice(0, 2);
 		return date && hour ? `${date}T${hour}:00` : undefined;
+	}
+
+	private addDays(date: Date, days: number): Date { date.setDate(date.getDate() + days); return date; }
+	private addMonths(date: Date, months: number): Date {
+		const day = date.getDate();
+		date.setDate(1);
+		date.setMonth(date.getMonth() + months);
+		date.setDate(Math.min(day, new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()));
+		return date;
+	}
+	private formatLocalDate(date: Date): string {
+		date.setMinutes(0, 0, 0);
+		return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:00`;
 	}
 
 	private persist(): void {
@@ -116,11 +154,13 @@ export class TaskEditor {
 				const checkbox = row.createEl('input', { type: 'checkbox' }); checkbox.checked = subtask.completed;
 				checkbox.addEventListener('change', () => { subtask.completed = checkbox.checked; this.persist(); });
 				const initialTitle = subtask.title;
+				let settled = false;
 				const input = row.createEl('input', { type: 'text', value: subtask.title, placeholder: this.t('subtaskPlaceholder') });
 				input.addEventListener('input', () => { subtask.title = input.value; });
 				input.addEventListener('keydown', (event) => {
 					if (event.key !== 'Enter') return;
 					event.preventDefault();
+					settled = true;
 					if (!input.value.trim()) {
 						if (!initialTitle) this.draft.subtasks.splice(index, 1);
 						else subtask.title = initialTitle;
@@ -129,12 +169,14 @@ export class TaskEditor {
 						return;
 					}
 					subtask.title = input.value.trim();
+					this.persist();
 					this.draft.subtasks.splice(index + 1, 0, { id: crypto.randomUUID(), title: '', completed: false, order: index + 1 });
 					draw();
 					(rows.children[index + 1]?.querySelector('input[type="text"]') as HTMLInputElement | null)?.focus();
-					this.persist();
 				});
 				input.addEventListener('blur', () => {
+					if (settled) return;
+					settled = true;
 					if (!input.value.trim()) {
 						if (!initialTitle) this.draft.subtasks.splice(index, 1);
 						else subtask.title = initialTitle;
