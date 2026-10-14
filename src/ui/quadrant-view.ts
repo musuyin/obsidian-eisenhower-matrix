@@ -10,6 +10,7 @@ export class ObsidianEisenhowerMatrixView extends ItemView {
 	private tasks: QuadrantTask[] = [];
 	private showCompleted = false;
 	private selectedTaskId: string | null = null;
+	private readonly expandedSubtaskTaskIds = new Set<string>();
 
 	constructor(leaf: WorkspaceLeaf, private readonly plugin: ObsidianEisenhowerMatrixPlugin) { super(leaf); }
 
@@ -35,11 +36,11 @@ export class ObsidianEisenhowerMatrixView extends ItemView {
 		title.createEl('h1', { text: this.t('viewTitle') });
 		title.createEl('p', { text: this.t('viewDescription') });
 		const actions = header.createDiv({ cls: 'obsidian-eisenhower-matrix-actions' });
-		const completedButton = actions.createEl('button', { text: this.showCompleted ? this.t('hideCompleted') : this.t('showCompleted') });
-		completedButton.addEventListener('click', () => { this.showCompleted = !this.showCompleted; this.render(); });
+		const completedButton = actions.createEl('button', { text: this.showCompleted ? this.t('hideCompleted') : this.t('showCompleted'), attr: { 'aria-pressed': String(this.showCompleted) } });
+		completedButton.addEventListener('click', () => void this.plugin.setShowCompletedTasks(!this.showCompleted));
 
 		const create = root.createDiv({ cls: 'obsidian-eisenhower-matrix-quick-create' });
-		const input = create.createEl('input', { type: 'text', placeholder: this.t('quickCreatePlaceholder') });
+		const input = create.createEl('input', { type: 'text', placeholder: this.t('quickCreatePlaceholder'), attr: { 'aria-label': this.t('quickCreatePlaceholder') } });
 		const category = create.createEl('select', { attr: { 'aria-label': this.t('quadrant') } });
 		QUADRANTS.forEach((quadrant) => category.createEl('option', { value: quadrant, text: quadrantLabel(this.plugin.settings.language, quadrant) }));
 		const add = create.createEl('button', { text: this.t('addTask'), cls: 'mod-cta' });
@@ -58,13 +59,16 @@ export class ObsidianEisenhowerMatrixView extends ItemView {
 		const panel = grid.createDiv({ cls: `obsidian-eisenhower-matrix-panel obsidian-eisenhower-matrix-${quadrant}` });
 		const heading = panel.createDiv({ cls: 'obsidian-eisenhower-matrix-panel-heading' });
 		heading.createEl('h3', { text: quadrantLabel(this.plugin.settings.language, quadrant) });
+		const total = this.tasks.filter((task) => task.quadrant === quadrant).length;
+		const completed = this.tasks.filter((task) => task.quadrant === quadrant && task.completed).length;
+		heading.createDiv({ cls: 'obsidian-eisenhower-matrix-panel-summary', text: this.t('taskCount', { completed: String(completed), total: String(total) }) });
 		const list = panel.createDiv({ cls: 'obsidian-eisenhower-matrix-task-list' });
 		list.addEventListener('dragover', (event) => { event.preventDefault(); panel.addClass('is-drag-target'); });
 		list.addEventListener('dragleave', () => panel.removeClass('is-drag-target'));
 		list.addEventListener('drop', (event) => {
 			event.preventDefault(); panel.removeClass('is-drag-target');
 			const taskId = event.dataTransfer?.getData('text/plain');
-			if (taskId) void this.moveTaskToQuadrant(taskId, quadrant);
+			if (taskId) void this.plugin.moveTask(taskId, quadrant);
 		});
 		list.addEventListener('dblclick', (event) => {
 			if (event.target === list || (event.target as HTMLElement).hasClass('obsidian-eisenhower-matrix-empty')) this.renderInlineCreate(list, quadrant);
@@ -94,6 +98,12 @@ export class ObsidianEisenhowerMatrixView extends ItemView {
 	private renderTask(list: HTMLElement, task: QuadrantTask): void {
 		const card = list.createDiv({ cls: `obsidian-eisenhower-matrix-task${task.completed ? ' is-completed' : ''}${task.id === this.selectedTaskId ? ' is-selected' : ''}`, attr: { draggable: 'true' } });
 		card.addEventListener('dragstart', (event) => { event.dataTransfer?.setData('text/plain', task.id); if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'; });
+		card.addEventListener('dragover', (event) => event.preventDefault());
+		card.addEventListener('drop', (event) => {
+			event.preventDefault(); event.stopPropagation();
+			const taskId = event.dataTransfer?.getData('text/plain');
+			if (taskId && taskId !== task.id) void this.plugin.moveTask(taskId, task.quadrant, task.id);
+		});
 		const top = card.createDiv({ cls: 'obsidian-eisenhower-matrix-task-top' });
 		const checkbox = top.createEl('input', { type: 'checkbox', attr: { 'aria-label': this.t('completed') } });
 		checkbox.checked = task.completed;
@@ -101,10 +111,23 @@ export class ObsidianEisenhowerMatrixView extends ItemView {
 		checkbox.addEventListener('change', () => void this.plugin.updateTask(task.id, { completed: checkbox.checked }));
 		const taskTitle = top.createEl('button', { text: task.title, cls: 'obsidian-eisenhower-matrix-task-title' });
 		taskTitle.addEventListener('click', (event) => { event.stopPropagation(); this.selectedTaskId = task.id; this.replaceTaskTitle(taskTitle, task); });
+		const details = top.createEl('button', { cls: 'obsidian-eisenhower-matrix-details-toggle', attr: { 'aria-label': this.t('taskDetails') } });
+		setIcon(details, 'info');
+		details.addEventListener('click', (event) => { event.stopPropagation(); this.selectedTaskId = task.id; this.render(); });
 		card.addEventListener('click', () => { this.selectedTaskId = task.id; this.render(); });
+		if (task.dueDate) card.createDiv({ cls: 'obsidian-eisenhower-matrix-task-due-date', text: this.t('dueDateInCollection', { date: this.formatDueDate(task.dueDate) }) });
 		if (task.subtasks.length) {
-			const subtasks = card.createDiv({ cls: 'obsidian-eisenhower-matrix-subtasks' });
-			[...task.subtasks].sort((a, b) => a.order - b.order).forEach((subtask) => this.renderSubtask(subtasks, task, subtask));
+			const completedSubtasks = task.subtasks.filter((subtask) => subtask.completed).length;
+			card.createDiv({ cls: 'obsidian-eisenhower-matrix-task-progress', text: this.t('subtaskProgress', { completed: String(completedSubtasks), total: String(task.subtasks.length) }) });
+		}
+		if (task.subtasks.length) {
+			const toggle = top.createEl('button', { cls: 'obsidian-eisenhower-matrix-subtask-toggle', attr: { 'aria-label': this.expandedSubtaskTaskIds.has(task.id) ? this.t('collapseSubtasks') : this.t('expandSubtasks') } });
+			setIcon(toggle, this.expandedSubtaskTaskIds.has(task.id) ? 'chevron-up' : 'chevron-down');
+			toggle.addEventListener('click', (event) => { event.stopPropagation(); if (this.expandedSubtaskTaskIds.has(task.id)) this.expandedSubtaskTaskIds.delete(task.id); else this.expandedSubtaskTaskIds.add(task.id); this.render(); });
+			if (this.expandedSubtaskTaskIds.has(task.id)) {
+				const subtasks = card.createDiv({ cls: 'obsidian-eisenhower-matrix-subtasks' });
+				[...task.subtasks].sort((a, b) => a.order - b.order).forEach((subtask) => this.renderSubtask(subtasks, task, subtask));
+			}
 		}
 	}
 
@@ -148,12 +171,15 @@ export class ObsidianEisenhowerMatrixView extends ItemView {
 		input.addEventListener('blur', save);
 	}
 
+	private formatDueDate(dueDate: string): string {
+		const [date = '', time = ''] = dueDate.split('T');
+		const [year, month, day] = date.split('-');
+		const hour = time.slice(0, 2);
+		return this.plugin.settings.language === 'zh' ? `${year}-${month}-${day} ${hour}:00` : `${month}/${day}/${year} ${hour}:00`;
+	}
+
 	private updateSubtask(task: QuadrantTask, subtaskId: string, patch: Partial<Subtask>): void {
 		void this.plugin.updateTask(task.id, { subtasks: task.subtasks.map((item) => item.id === subtaskId ? { ...item, ...patch } : item) });
-	}
-	private moveTaskToQuadrant(taskId: string, quadrant: Quadrant): void {
-		const task = this.tasks.find((candidate) => candidate.id === taskId);
-		if (task && task.quadrant !== quadrant) void this.plugin.updateTask(taskId, { quadrant, order: this.tasks.filter((candidate) => candidate.quadrant === quadrant).length });
 	}
 
 	private renderDetails(root: HTMLElement): void {

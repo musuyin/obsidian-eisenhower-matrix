@@ -37,7 +37,13 @@ export default class ObsidianEisenhowerMatrixPlugin extends Plugin {
 	async createQuickTask(title: string, quadrant: Quadrant): Promise<void> {
 		const trimmedTitle = title.trim();
 		if (!trimmedTitle) return;
-		await this.createTask({ title: trimmedTitle, description: '', quadrant, links: [], subtasks: [] });
+		await this.createTask({ title: trimmedTitle, description: '', quadrant, links: [], subtasks: [], dueDate: this.defaultDueDate() });
+	}
+
+	private defaultDueDate(): string {
+		const now = new Date();
+		now.setMinutes(0, 0, 0);
+		return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:00`;
 	}
 
 	async createTask(draft: TaskDraft): Promise<void> {
@@ -51,21 +57,60 @@ export default class ObsidianEisenhowerMatrixPlugin extends Plugin {
 		await this.store.save(data); await this.refreshViews();
 	}
 
+	async moveTask(id: string, quadrant: Quadrant, beforeTaskId?: string): Promise<void> {
+		const data = await this.store.load();
+		const task = data.tasks.find((candidate) => candidate.id === id);
+		if (!task) return;
+		const sourceQuadrant = task.quadrant;
+		const remaining = data.tasks.filter((candidate) => candidate.id !== id);
+		const destination = remaining.filter((candidate) => candidate.quadrant === quadrant).sort((a, b) => a.order - b.order);
+		const beforeIndex = beforeTaskId ? destination.findIndex((candidate) => candidate.id === beforeTaskId) : -1;
+		task.quadrant = quadrant;
+		destination.splice(beforeIndex >= 0 ? beforeIndex : destination.length, 0, task);
+		data.tasks = [...remaining.filter((candidate) => candidate.quadrant !== quadrant), ...destination];
+		for (const currentQuadrant of new Set([sourceQuadrant, quadrant])) {
+			const ordered = currentQuadrant === quadrant
+				? destination
+				: data.tasks.filter((candidate) => candidate.quadrant === currentQuadrant).sort((a, b) => a.order - b.order);
+			ordered.forEach((candidate, order) => { candidate.order = order; candidate.updatedAt = new Date().toISOString(); });
+		}
+		await this.store.save(data); await this.refreshViews();
+	}
+
 	async updateTask(id: string, patch: Partial<QuadrantTask> | TaskDraft): Promise<void> {
 		const data = await this.store.load();
 		const task = data.tasks.find((candidate) => candidate.id === id);
 		if (!task) return;
 		const wasCompleted = task.completed;
+		const originalQuadrant = task.quadrant;
 		Object.assign(task, patch, { updatedAt: new Date().toISOString() });
 		if (!wasCompleted && task.completed) task.completedAt = new Date().toISOString();
 		if (wasCompleted && !task.completed) delete task.completedAt;
+		if (originalQuadrant !== task.quadrant) {
+			task.order = data.tasks.filter((candidate) => candidate.id !== task.id && candidate.quadrant === task.quadrant).length;
+			this.normalizeOrders(data.tasks, originalQuadrant, task.quadrant);
+		}
 		await this.store.save(data); await this.refreshViews();
 	}
 
 	async deleteTask(id: string): Promise<void> {
 		const data = await this.store.load();
+		const task = data.tasks.find((candidate) => candidate.id === id);
 		data.tasks = data.tasks.filter((task) => task.id !== id);
+		if (task) this.normalizeOrders(data.tasks, task.quadrant);
 		await this.store.save(data); await this.refreshViews();
+	}
+
+	async setShowCompletedTasks(value: boolean): Promise<void> {
+		this.settings.showCompletedTasks = value;
+		await this.saveSettings();
+		await this.refreshViews();
+	}
+
+	private normalizeOrders(tasks: QuadrantTask[], ...quadrants: Quadrant[]): void {
+		for (const quadrant of new Set(quadrants)) {
+			tasks.filter((task) => task.quadrant === quadrant).sort((left, right) => left.order - right.order).forEach((task, order) => { task.order = order; });
+		}
 	}
 
 	async refreshViews(): Promise<void> {
