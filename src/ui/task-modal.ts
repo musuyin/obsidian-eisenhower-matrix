@@ -157,9 +157,13 @@ export class TaskEditor {
 		const draw = () => {
 			rows.empty();
 			this.draft.subtasks.forEach((subtask, index) => {
-				const row = rows.createDiv({ cls: 'obsidian-eisenhower-matrix-modal-row' });
+				const row = rows.createDiv({ cls: `obsidian-eisenhower-matrix-modal-row obsidian-eisenhower-matrix-subtask-editor${subtask.completed ? ' is-completed' : ''}` });
 				const checkbox = row.createEl('input', { type: 'checkbox' }); checkbox.checked = subtask.completed;
-				checkbox.addEventListener('change', () => { subtask.completed = checkbox.checked; this.persist(); });
+				checkbox.addEventListener('change', () => {
+					subtask.completed = checkbox.checked;
+					row.toggleClass('is-completed', checkbox.checked);
+					this.persist();
+				});
 				const initialTitle = subtask.title;
 				let settled = false;
 				const input = row.createEl('input', { type: 'text', value: subtask.title, placeholder: this.t('subtaskPlaceholder') });
