@@ -1,7 +1,7 @@
 {
   "id": "obsidian-eisenhower-matrix",
   "name": "Obsidian Eisenhower Matrix",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "minAppVersion": "1.13.0",
   "description": "Manage tasks in an Eisenhower matrix as a dedicated Obsidian view.",
   "author": "Obsidian Eisenhower Matrix contributors",
