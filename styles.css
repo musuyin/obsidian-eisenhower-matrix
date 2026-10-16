@@ -43,7 +43,7 @@
 .obsidian-eisenhower-matrix-subtask input { margin: 0; }
 .obsidian-eisenhower-matrix-subtask-toggle, .obsidian-eisenhower-matrix-details-toggle { border: 0; background: transparent; box-shadow: none; color: var(--text-muted); padding: .15rem; cursor: pointer; }
 .obsidian-eisenhower-matrix-details-toggle { margin-left: auto; }
-.obsidian-eisenhower-matrix-subtask.is-completed span { text-decoration: line-through; opacity: .7; }
+.obsidian-eisenhower-matrix-subtask.is-completed .obsidian-eisenhower-matrix-subtask-title, .obsidian-eisenhower-matrix-subtask-editor.is-completed input[type='text'] { text-decoration: line-through; opacity: .7; }
 .obsidian-eisenhower-matrix-empty { color: var(--text-faint); text-align: center; padding: 1.5rem 0; font-size: .88rem; }
 .obsidian-eisenhower-matrix-details { margin-top: .5rem; padding-bottom: 2rem; }
 .obsidian-eisenhower-matrix-detail-title { width: 100%; box-sizing: border-box; font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; }
