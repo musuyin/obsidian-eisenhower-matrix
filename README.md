@@ -43,11 +43,16 @@ To publish a GitHub release, use a clean `main` branch and follow these steps:
 1. Set the next Semantic Version in `package.json`.
 2. Run `npm version <version> --no-git-tag-version`. This updates `package.json`, `package-lock.json`, `manifest.json`, and `versions.json` through the project's version script.
 3. Run `npm run validate:release && npm run build && npm run lint`.
-4. Commit the version files, merge or push the release commit to `main`, then create and push an exact matching tag (for example, `0.1.0`; do not prefix it with `v`):
+4. Commit the version files and merge or push the release commit to `main`. From a clean local `main` that exactly matches `origin/main`, create and push the exact matching tag (for example, `0.1.0`; do not prefix it with `v`):
 
    ```bash
-   git tag 0.1.0
-   git push origin 0.1.0
+   npm run release:tag -- 0.1.0
+   ```
+
+   Without a tag, the command prints the release tags already on `origin` and refuses to make changes:
+
+   ```bash
+   npm run release:tag
    ```
 
 Pushing that tag runs the release workflow. It verifies the tag matches both package and manifest versions, builds the plugin, and creates a GitHub Release containing `main.js`, `manifest.json`, and `styles.css`.
